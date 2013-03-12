@@ -12,7 +12,7 @@ The License
 
 This code is released under an MIT license.
 
-    Copyright (C) 2011 by Andrew G. Crowell
+    Copyright (C) 2013 by Andrew G. Crowell
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
