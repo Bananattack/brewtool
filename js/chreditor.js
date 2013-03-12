@@ -229,11 +229,9 @@ var editor = (function(self) {
         var parts = currentFile.name.split('.');
         parts.pop();
 
-        var filename = parts.join('.') + (outputFormatDropdown.value == 'PNG' ? '.png' : '.chr');
         var callback = function(blob) {
-            saveAs(blob, filename);
+            saveAs(blob, parts.join('.') + (outputFormatDropdown.value == 'PNG' ? '.png' : '.chr'));
         }
-
         if(outputFormatDropdown.value == 'PNG') {
             canvasToBlob(outputCanvas, callback);
             return false;

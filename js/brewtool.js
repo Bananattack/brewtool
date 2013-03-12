@@ -167,5 +167,45 @@ var brewtool = (function(self) {
         callback(new Blob([buffer], {type: "application/octet-stream"}));
     };
 
+    self.loadPalettes = function(bytes) {
+        var palettes = [];
+        var count = Math.floor(bytes.length / 8);
+        for(var i = 0; i < count; i++) {
+            var palette = [];
+            for(var j = 0; j < 4; j++) {
+                var v = bytes.charCodeAt(i * 8 + j * 2) | (bytes.charCodeAt(i * 8 + j * 2 + 1) << 8)
+                palette.push([
+                    (v & 0x1F) << 3,
+                    ((v >> 5) & 0x1F) << 3,
+                    ((v >> 10) & 0x1F) << 3,
+                ]);
+            }
+            palettes.push(palette);
+        }
+        return palettes;
+    }
+
+    self.savePalettes = function(palettes, callback) {
+        var bytes = [];
+        for(var i = 0; i < palettes.length; i++) {
+            var palette = palettes[i];
+            for(var j = 0; j < palette.length; j++) {
+                var r = Math.floor(palette[j][0] * 32 / 256);
+                var g = Math.floor(palette[j][1] * 32 / 256);
+                var b = Math.floor(palette[j][2] * 32 / 256);
+                var c = (r | g << 5 | b << 10);
+
+                bytes.push(c & 0xFF);
+                bytes.push((c >> 8) & 0xFF);
+            }
+        }
+
+        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
+        for(var i = 0; i < bytes.length; i++) {
+            buffer[i] = bytes[i];
+        }
+        callback(new Blob([buffer], {type: "application/octet-stream"}));
+    }
+
     return self;
 })({})

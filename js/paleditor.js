@@ -97,7 +97,6 @@ var editor = (function(self) {
             image.onload = function() {
                 inputCanvas.width = image.width;
                 inputCanvas.height = image.height;
-                inputCanvas.style.display = 'block';
                 inputContext.drawImage(image, 0, 0);
 
                 try {
@@ -105,7 +104,7 @@ var editor = (function(self) {
                 } catch(e) {
                     alert(e);
                 }
-                self.setupImage();
+                self.setup();
             };
             image.src = URL.createObjectURL(file);
         } else {
@@ -113,28 +112,8 @@ var editor = (function(self) {
             if(extension == 'pal') {
                 var reader = new FileReader();
                 reader.onload = function(event) {
-                    var bytes = event.target.result;
-                    
-                    inputCanvas.width = 4;
-                    inputCanvas.height = Math.floor(bytes.length / 8);
-                    inputCanvas.style.display = 'block';
-
-                    var pixels = inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
-                    for(var i = 0, j = 0; i < bytes.length; i += 2, j += 4) {
-                        var v = bytes.charCodeAt(i) | (bytes.charCodeAt(i + 1) << 8)
-                        pixels.data[j + 0] = (v & 0x1F) << 3;
-                        pixels.data[j + 1] = ((v >> 5) & 0x1F) << 3;
-                        pixels.data[j + 2] = ((v >> 10) & 0x1F) << 3;
-                        pixels.data[j + 3] = 0xFF;
-                    }
-                    inputContext.putImageData(pixels, 0, 0);
-
-                    try {
-                        palettes = self.getPalettes(inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height));
-                    } catch(e) {
-                        alert(e);
-                    }
-                    self.setupImage();
+                    palettes = brewtool.loadPalettes(event.target.result);
+                    self.setup();
                 };
                 reader.readAsBinaryString(file);
             }
@@ -151,25 +130,9 @@ var editor = (function(self) {
         var parts = currentFile.name.split('.');
         parts.pop();
 
-        var bytes = [];
-        for(var i = 0; i < palettes.length; i++) {
-            var palette = palettes[i];
-            for(var j = 0; j < palette.length; j++) {
-                var r = Math.floor(palette[j][0] * 32 / 256);
-                var g = Math.floor(palette[j][1] * 32 / 256);
-                var b = Math.floor(palette[j][2] * 32 / 256);
-                var c = (r | g << 5 | b << 10);
-
-                bytes.push(c & 0xFF);
-                bytes.push((c >> 8) & 0xFF);
-            }
-        }
-
-        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
-        for(var i = 0; i < bytes.length; i++) {
-            buffer[i] = bytes[i];
-        }
-        saveAs(new Blob([buffer], {type: "application/octet-stream"}), parts.join('.') + '.pal');
+        brewtool.savePalettes(palettes, function(blob) {
+            saveAs(blob, parts.join('.') + '.pal');
+        });
 
         return false;
     };
@@ -221,7 +184,7 @@ var editor = (function(self) {
         return palettes;
     }
 
-    self.setupImage = function() {
+    self.setup = function() {
         while(conversionTable.hasChildNodes()) {
             conversionTable.removeChild(conversionTable.lastChild);
         }
