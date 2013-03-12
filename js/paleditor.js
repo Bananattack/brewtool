@@ -197,7 +197,7 @@ var editor = (function(self) {
         }
 
         var h2 = document.createElement('h2');
-        h2.appendChild(document.createTextNode('Palette'));
+        h2.appendChild(document.createTextNode('Palettes'));
         conversionTable.appendChild(h2);
 
         var table = document.createElement('table');        
