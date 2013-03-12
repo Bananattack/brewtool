@@ -111,7 +111,6 @@ var editor = (function(self) {
         } else {
             var extension = file.name.split('.').pop();
             if(extension == 'pal') {
-                alert('fucker');
                 var reader = new FileReader();
                 reader.onload = function(event) {
                     var bytes = event.target.result;
