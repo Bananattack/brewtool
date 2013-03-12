@@ -226,7 +226,7 @@ var editor = (function(self) {
                     var g = Math.floor(palette[j][1] * 32 / 256);
                     var b = Math.floor(palette[j][2] * 32 / 256);
 
-                    td.appendChild(document.createTextNode('0x' + (r | g << 5 | b << 10).toString(16)));
+                    td.appendChild(document.createTextNode('0x' + (r | g << 5 | b << 10 | 1 << 16).toString(16).substring(1).toUpperCase()));
                     tr.appendChild(td);
                 })();
             }
