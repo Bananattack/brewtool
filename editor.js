@@ -586,6 +586,8 @@ var editor = (function(self) {
         } else {
             outputCanvas.width = inputCanvas.width;
             outputCanvas.height = inputCanvas.height;
+            outputCanvas.style.display = 'block';
+            document.querySelector('.preview').style.display = 'block';
 
             var inputPixels = inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
             var outputPixels = outputContext.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
