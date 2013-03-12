@@ -70,6 +70,10 @@ a {
     width: 116px;
 }
 
+.editor select {
+    width: 150px;
+}
+
 .section h2 {
     border-bottom: 2px solid #5078C0;
 }

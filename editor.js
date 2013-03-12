@@ -85,11 +85,13 @@ var editor = (function(self) {
             }
         });
             var option = document.createElement('option');
+            option.value = 'GB';
             option.appendChild(document.createTextNode('Game Boy'));
             option.setAttribute('selected', 'selected');
             inputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
+            option.value = 'NES';
             option.appendChild(document.createTextNode('NES'));
             inputFormatDropdown.appendChild(option);
         div.appendChild(inputFormatDropdown);
@@ -143,16 +145,19 @@ var editor = (function(self) {
         div.appendChild(span);
         outputFormatDropdown = document.createElement('select');
             var option = document.createElement('option');
-            option.appendChild(document.createTextNode('Game Boy'));
+            option.value = 'GB';
+            option.appendChild(document.createTextNode('Game Boy (.chr)'));
             option.setAttribute('selected', 'selected');
             outputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
-            option.appendChild(document.createTextNode('NES'));
+            option.value = 'NES';
+            option.appendChild(document.createTextNode('NES (.chr)'));
             outputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
-            option.appendChild(document.createTextNode('PNG'));
+            option.value = 'PNG';
+            option.appendChild(document.createTextNode('PNG (.png)'));
             outputFormatDropdown.appendChild(option);
         div.appendChild(outputFormatDropdown);
         saveButton = document.createElement('input');
@@ -182,7 +187,8 @@ var editor = (function(self) {
         return false;
     };
 
-    self.loadFile = function(file) {    
+    self.loadFile = function(file) {
+        filePicker.value = '';
         if(file.type === 'image/png' || file.type === 'image/gif') {
             var image = new Image;
             image.onload = function() {
