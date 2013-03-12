@@ -100,7 +100,7 @@ a, a:visited, a:hover, a:active,
     min-height: 16px;
 }
 
-.conversion_table td .color {    
+.conversion_table td .color {
     width: 16px;
     height: 16px;
     max-width: 16px;
@@ -140,4 +140,8 @@ a, a:visited, a:hover, a:active,
     cursor: text;
     background-color: #FFFFFF;
     border: 1px solid #cccccc;
+}
+
+.conversion_table tr.hex td {
+    padding: 8px;
 }
