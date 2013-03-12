@@ -5,8 +5,11 @@ body {
     color: #FFFFFF;
 }
 
-a {
+a, a:visited, a:hover, a:active,
+.page > h1 a, .page > h1 a:visited, .page > h1 a:hover, .page > h1 a:active {
+    border: 0;
     text-decoration: none;
+    color: #FFFFFF;
 }
 
 .page {
@@ -16,8 +19,7 @@ a {
     text-shadow: 2px 2px 0px #556677;
 }
 
-.page a
-{
+.page a {
     font-style: normal;
     color: #A4F0F7;
 }
