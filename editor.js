@@ -210,7 +210,8 @@ var editor = (function(self) {
             if(extension == 'chr') {
                 var reader = new FileReader();
                 reader.onload = function(event) {
-                    self.readCHR(event.target.result);
+                    chr.load(event.target.result, inputCanvas,inputFormatDropdown.value, FourColors);
+                    paddingOption.checked = false;
                     inputCanvas.style.display = 'block';
 
                     palette = FourColors.slice();
@@ -231,72 +232,21 @@ var editor = (function(self) {
         if(currentFile === null) {
             return false;
         }
+
         var parts = currentFile.name.split('.');
         parts.pop();
+
+        var filename = parts.join('.') + (outputFormatDropdown.value == 'PNG' ? '.png' : '.chr');
+        var callback = function(blob) {
+            saveAs(blob, filename);
+        }
+
         if(outputFormatDropdown.value == 'PNG') {
-            canvasToBlob(outputCanvas, function(blob) {
-                saveAs(blob, parts.join('.') + '.png');
-            });
+            canvasToBlob(outputCanvas, callback);
             return false;
-        }
-
-        var fields = conversionTable.querySelectorAll('.fields input');
-        var colors = conversionTable.querySelectorAll('.dest_palette .color');
-        var conversions = [];
-        for(var i = 0; i < fields.length; i++) {
-            var index = Math.min(Math.max(parseInt(fields[i].value) || 0, 0), 3);
-            fields[i].value = index;
-            colors[i].style.backgroundColor = 'rgb(' + FourColors[index].join(',') + ')';
-            conversions.push(index);
-        }
-
-        var bytes = [];
-        var outputPixels = outputContext.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
-        var indices = self.getPixelIndices(outputPixels, FourColors);
-        if(outputFormatDropdown.value == 'NES') {
-            for(var y = 0, h = outputCanvas.height; y < h; y += 8) {
-                for(var x = 0, w = outputCanvas.width; x < w; x += 8) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var color = indices[(y + j) * outputCanvas.width + x + i];
-                            low = (low << 1) | (color & 0x1);
-                        }
-                        bytes.push(low);
-                    }
-                    for(var j = 0; j < 8; j++) {
-                        var high = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var c = indices[(y + j) * outputCanvas.width + x + i];
-                            high = (high << 1) | ((c & 0x2) >> 1);
-                        }
-                        bytes.push(high);
-                    }
-                }
-            }
         } else {
-            for(var y = 0, h = outputCanvas.height; y < h; y += 8) {
-                for(var x = 0, w = outputCanvas.width; x < w; x += 8) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = 0;
-                        var high = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var color = indices[(y + j) * outputCanvas.width + x + i];
-                            low = (low << 1) | (color & 0x1);
-                            high = (high << 1) | ((color & 0x2) >> 1);
-                        }
-                        bytes.push(low);
-                        bytes.push(high);
-                    }
-                }
-            }
+            chr.save(outputCanvas, outputFormatDropdown.value, FourColors, callback);
         }
-
-        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
-        for(var i = 0; i < bytes.length; i++) {
-            buffer[i] = bytes[i];
-        }
-        saveAs(new Blob([buffer], {type: "application/octet-stream"}), parts.join('.') + '.chr');
 
         return false;
     };
@@ -309,84 +259,6 @@ var editor = (function(self) {
     self.changeConversion = function(event) {
         self.recalculate();
     };
-
-    self.readCHR = function(bytes) {
-        var tiles = bytes.length / 16;
-        if(tiles == 0) {
-            return;
-        }
-
-        // Try to fit this in a nice rectangular region, so it's easier to view.
-        var columns = 0;
-        var rows = 0;
-        for(var i = 16; i != 1; i /= 2) {
-            if(tiles % i == 0) {
-                if(i >= 8) {
-                    columns = i;
-                    rows = tiles / i;
-                }
-                else {
-                    rows = i;
-                    columns = tiles / i;
-                }
-                break;
-            }
-        }
-        if(columns == 0) {
-            columns = tiles;
-            rows = 1;
-        }
-
-        inputCanvas.width = columns * 8;
-        inputCanvas.height = rows * 8;
-        var pixels = inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
-
-        if(inputFormatDropdown.value == 'NES') {
-            for(var row = 0; row < rows; row++) {
-                for(var col = 0; col < columns; col++) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = bytes.charCodeAt((row * columns + col) * 16 + j);
-                        for(var i = 0; i < 8; i++) {
-                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
-                            pixels.data[p] = (low & (1 << (7 - i))) ? 1 : 0;
-                        }
-                    }
-                    for(var j = 0; j < 8; j++) {
-                        var high = bytes.charCodeAt((row * columns + col) * 16 + j + 8);
-                        for(var i = 0; i < 8; i++) {
-                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
-                            var c = FourColors[pixels.data[p] | (high & (1 << (7 - i)) ? 2 : 0)]
-                            pixels.data[p + 0] = c[0];
-                            pixels.data[p + 1] = c[1];
-                            pixels.data[p + 2] = c[2];
-                            pixels.data[p + 3] = 0xFF;
-                        }
-                    }
-                }
-            }
-        } else {
-            for(var row = 0; row < rows; row++) {
-                for(var col = 0; col < columns; col++) {
-                    for(var j = 0; j < 8; j++) {
-                        var index = ((row * columns + col) * 8 + j) * 2;
-                        var low = bytes.charCodeAt(index);
-                        var high = bytes.charCodeAt(index + 1);
-                        for(var i = 0; i < 8; i++) {
-                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
-                            var c = FourColors[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
-
-                            pixels.data[p + 0] = c[0];
-                            pixels.data[p + 1] = c[1];
-                            pixels.data[p + 2] = c[2];
-                            pixels.data[p + 3] = 0xFF;
-                        }
-                    }
-                }
-            }
-        }
-        inputContext.putImageData(pixels, 0, 0);
-        paddingOption.checked = false;
-    }
 
     self.getPalette = function(pixels) {
         var set = {};
@@ -607,8 +479,6 @@ var editor = (function(self) {
 
             outputContext.putImageData(outputPixels, 0, 0);
         }
-
-
     }
 
     return self;
