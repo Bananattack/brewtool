@@ -18,6 +18,32 @@ var editor = (function(self) {
             a.dispatchEvent(click);
         };
 
+    var dataUrlToBlob = function(url) {
+        var parts = url.split(',');
+        var contentType = parts[0].split(':')[1].split(';');
+        var mimeType = contentType[0];
+        var encoding = contentType[1];
+        var data = parts[1];
+
+        if (encoding == 'base64') {
+            var bytes = window.atob(data);
+            var buffer = new Uint8Array(bytes.length);
+            for (var i = 0; i < bytes.length; ++i) {
+                buffer[i] = bytes.charCodeAt(i);
+            }
+            return new Blob([buffer], {type: mimeType});
+        } else {
+            return new Blob([data], {type: mimeType});
+        }
+    }
+
+    var canvasToBlob = function(canvas, callback) {
+        if(canvas.toBlob) {
+            canvas.toBlob(callback);
+        } else {
+            callback(dataUrlToBlob(canvas.toDataURL()));
+        }
+    }
 
     var FourColors = [
         [0x00, 0x00, 0x00],
@@ -124,6 +150,10 @@ var editor = (function(self) {
             var option = document.createElement('option');
             option.appendChild(document.createTextNode('NES'));
             outputFormatDropdown.appendChild(option);
+
+            var option = document.createElement('option');
+            option.appendChild(document.createTextNode('PNG'));
+            outputFormatDropdown.appendChild(option);
         div.appendChild(outputFormatDropdown);
         saveButton = document.createElement('input');
         saveButton.setAttribute('type', 'button');
@@ -195,11 +225,13 @@ var editor = (function(self) {
         if(currentFile === null) {
             return false;
         }
-
         var parts = currentFile.name.split('.');
         parts.pop();
-        parts.push('chr');
-        var filename = parts.join('.');
+        if(outputFormatDropdown.value == 'PNG') {
+            canvasToBlob(outputCanvas, function(blob) {
+                saveAs(blob, parts.join('.') + '.png');
+            });
+        }
 
         var fields = conversionTable.querySelectorAll('.fields input');
         var colors = conversionTable.querySelectorAll('.dest_palette .color');
@@ -257,7 +289,7 @@ var editor = (function(self) {
         for(var i = 0; i < bytes.length; i++) {
             buffer[i] = bytes[i];
         }
-        saveAs(new Blob([buffer], {type: "application/octet-stream"}), filename);
+        saveAs(new Blob([buffer], {type: "application/octet-stream"}), parts.join('.') + '.chr');
 
         return false;
     };
