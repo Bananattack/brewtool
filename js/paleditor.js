@@ -100,7 +100,11 @@ var editor = (function(self) {
                 inputCanvas.style.display = 'block';
                 inputContext.drawImage(image, 0, 0);
 
-                palettes = self.getPalettes(inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height));
+                try {
+                    palettes = self.getPalettes(inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height));
+                } catch(e) {
+                    alert(e);
+                }
                 self.setupImage();
             };
             image.src = URL.createObjectURL(file);
@@ -161,6 +165,14 @@ var editor = (function(self) {
                 }
             }
             
+            var N = 4;
+            while(row.length < N) {
+                row.unshift(row[0]);
+            }
+            while(row.length > N) {
+                row.pop();
+            }
+
             row = row.join(':');
             if(!rows[row]) {
                 rows[row] = true;
@@ -169,16 +181,11 @@ var editor = (function(self) {
                 for(var i = 0; i < items.length; i++) {
                     pal.push(items[i].split(','));
                 }
-                var N = 4;
-                while(pal.length < N) {
-                    pal.unshift(pal[0]);
-                }
-                if(pal.length > N) { 
-                    pal.splice(pal.length - N, pal.length - N);
-                }
-
 
                 palettes.push(pal);
+                if(palettes.length > 16) {
+                    throw 'That is a lot of palettes. You might be doing this wrong.';
+                }
             }
         }
         return palettes;
