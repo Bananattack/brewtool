@@ -1,0 +1,121 @@
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #5E89D0;
+    color: #FFFFFF;
+}
+
+.page {
+    margin-left: auto;
+    margin-right: auto;
+    width: 800px;
+    text-shadow: 2px 2px 0px #556677;
+}
+
+.page > h1 {
+    font-size: 6em;
+    padding-bottom: 16px;
+    margin: 0;
+    margin-top: 16px;
+    margin-bottom: 32px;
+    border: 16px solid #5E89D0;
+    border-bottom: 16px solid #5980C9;
+    border-radius: 64px;
+    text-shadow: 3px 3px 0px #556677;
+    letter-spacing:4px;
+}
+
+.page > h2 {
+    margin-left: 24px;
+}
+
+.page > p {
+    margin-left: 24px;
+    font-size: 1.2em;
+    font-style: italic;
+}
+
+.section {
+    background-color: #5980C9;
+    color: #FFFFFF;
+    padding: 4px;
+    padding-left: 16px;
+    border-radius: 16px;
+    margin: 16px;
+}
+
+.editor canvas {
+    display: none;
+    margin: 8px 0px;
+}
+
+.format {
+    display: inline-block;
+    width: 116px;
+}
+
+.section h2 {
+    border-bottom: 2px solid #5078C0;
+}
+
+.editor input {
+    margin-left: 32px;
+}
+
+.conversion_table, .preview {
+    display: none;
+}
+
+.conversion_table table,
+.conversion_table table tr,
+.conversion_table table tr td {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.conversion_table td {
+    height: 16px;
+    min-height: 16px;
+}
+
+.conversion_table td .color {    
+    width: 16px;
+    height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    margin: 4px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #333333;
+}
+
+.conversion_table td input {
+    min-width: 24px;
+    min-height: 16px;
+    width: 24px;
+    height: 16px;
+    max-width: 24px;
+    max-height: 16px;
+    margin: 4px;
+    padding: 0px;
+    text-align: center;
+    border: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #FFFFFF;
+    font-weight: bold;
+}
+
+.conversion_table td {
+    padding: 0px;
+    text-align: center;
+}
+
+.conversion_table tr.fields {
+    border: 1px solid #666666;
+}
+
+.conversion_table tr.fields td {
+    cursor: text;
+    background-color: #FFFFFF;
+    border: 1px solid #cccccc;
+}
