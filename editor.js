@@ -72,7 +72,7 @@ var editor = (function(self) {
         h2.appendChild(document.createTextNode('Input'));
         div.appendChild(h2);
         var p = document.createElement('p');
-        p.appendChild(document.createTextNode('Source file may be .chr, .png or .gif.'));
+        p.appendChild(document.createTextNode('Source file may be .chr, .png or .gif. You can drag and drop files here.'));
         div.appendChild(p);
         var span = document.createElement('span');
         span.className = 'format';
