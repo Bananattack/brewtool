@@ -5,11 +5,27 @@ body {
     color: #FFFFFF;
 }
 
+a {
+    text-decoration: none;
+}
+
 .page {
     margin-left: auto;
     margin-right: auto;
     width: 800px;
     text-shadow: 2px 2px 0px #556677;
+}
+
+.page a
+{
+    font-style: normal;
+    color: #A4F0F7;
+}
+
+.page a:hover, .page a:active
+{
+    font-style: normal;
+    color: #F0F7A4;
 }
 
 .page > h1 {
