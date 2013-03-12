@@ -33,7 +33,7 @@ var editor = (function(self) {
         h2.appendChild(document.createTextNode('Input'));
         div.appendChild(h2);
         var p = document.createElement('p');
-        p.appendChild(document.createTextNode('Source file may be .png or .gif. You can drag and drop files here.'));
+        p.appendChild(document.createTextNode('Source file may be .pal, .png or .gif. You can drag and drop files here.'));
         div.appendChild(p);
         var span = document.createElement('span');
         span.className = 'format';
@@ -108,6 +108,37 @@ var editor = (function(self) {
                 self.setupImage();
             };
             image.src = URL.createObjectURL(file);
+        } else {
+            var extension = file.name.split('.').pop();
+            if(extension == 'pal') {
+                alert('fucker');
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    var bytes = event.target.result;
+                    
+                    inputCanvas.width = 4;
+                    inputCanvas.height = Math.floor(bytes.length / 8);
+                    inputCanvas.style.display = 'block';
+
+                    var pixels = inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
+                    for(var i = 0, j = 0; i < bytes.length; i += 2, j += 4) {
+                        var v = bytes.charCodeAt(i) | (bytes.charCodeAt(i + 1) << 8)
+                        pixels.data[j + 0] = (v & 0x1F) << 3;
+                        pixels.data[j + 1] = ((v >> 5) & 0x1F) << 3;
+                        pixels.data[j + 2] = ((v >> 10) & 0x1F) << 3;
+                        pixels.data[j + 3] = 0xFF;
+                    }
+                    inputContext.putImageData(pixels, 0, 0);
+
+                    try {
+                        palettes = self.getPalettes(inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height));
+                    } catch(e) {
+                        alert(e);
+                    }
+                    self.setupImage();
+                };
+                reader.readAsBinaryString(file);
+            }
         }
     };
 
