@@ -45,13 +45,6 @@ var editor = (function(self) {
         }
     }
 
-    var FourColors = [
-        [0x00, 0x00, 0x00],
-        [0x60, 0x60, 0x60],
-        [0xC0, 0xC0, 0xC0],
-        [0xFF, 0xFF, 0xFF]
-    ];
-
     var inputCanvas = null;
     var outputCanvas = null;
     var inputContext = null;
@@ -62,7 +55,7 @@ var editor = (function(self) {
     var saveButton = null;
     var paddingOption = null;
     var conversionTable = null;
-    var palette = FourColors.slice();
+    var palette = brewtool.getGreyscalePalette();
     var currentFile = null;
 
     self.init = function(config) {
@@ -210,11 +203,11 @@ var editor = (function(self) {
             if(extension == 'chr') {
                 var reader = new FileReader();
                 reader.onload = function(event) {
-                    chr.load(event.target.result, inputCanvas,inputFormatDropdown.value, FourColors);
+                    brewtool.loadTileset(event.target.result, inputCanvas,inputFormatDropdown.value, brewtool.getGreyscalePalette());
                     paddingOption.checked = false;
                     inputCanvas.style.display = 'block';
 
-                    palette = FourColors.slice();
+                    palette = brewtool.getGreyscalePalette();
                     self.setupImage();
                 };
                 reader.readAsBinaryString(file);
@@ -245,7 +238,7 @@ var editor = (function(self) {
             canvasToBlob(outputCanvas, callback);
             return false;
         } else {
-            chr.save(outputCanvas, outputFormatDropdown.value, FourColors, callback);
+            brewtool.saveTileset(outputCanvas, outputFormatDropdown.value, brewtool.getGreyscalePalette(), callback);
         }
 
         return false;
@@ -352,14 +345,14 @@ var editor = (function(self) {
         }
         table.appendChild(tr);
 
-
+        var greyscalePalette = brewtool.getGreyscalePalette();
         var tr = document.createElement('tr');
         tr.className = 'dest_palette';
         for(var i = 0; i < palette.length; i++) {
             var td = document.createElement('td');
             var div = document.createElement('div');
             div.className = 'color';
-            div.style.backgroundColor = 'rgb(' + FourColors[0].join(',') + ')';
+            div.style.backgroundColor = 'rgb(' + greyscalePalette[0].join(',') + ')';
             td.appendChild(div);
             tr.appendChild(td);
         }
@@ -415,10 +408,11 @@ var editor = (function(self) {
         var fields = conversionTable.querySelectorAll('.fields input');
         var colors = conversionTable.querySelectorAll('.dest_palette .color');
         var conversions = [];
+        var greyscalePalette = brewtool.getGreyscalePalette();
         for(var i = 0; i < fields.length; i++) {
             var index = Math.min(Math.max(parseInt(fields[i].value) || 0, 0), 3);
             fields[i].value = index;
-            colors[i].style.backgroundColor = 'rgb(' + FourColors[index].join(',') + ')';
+            colors[i].style.backgroundColor = 'rgb(' + greyscalePalette[index].join(',') + ')';
             conversions.push(index);
         }
 
@@ -445,9 +439,9 @@ var editor = (function(self) {
                             var src = (row * (TileSize + 1) + 1 + y) * inputCanvas.width + (col * (TileSize + 1) + 1 + x);
                             var dest = (row * TileSize + y) * outputCanvas.width + (col * TileSize + x);
                             var c = conversions[indices[src]];
-                            outputPixels.data[dest * 4 + 0] = FourColors[c][0];
-                            outputPixels.data[dest * 4 + 1] = FourColors[c][1];
-                            outputPixels.data[dest * 4 + 2] = FourColors[c][2];
+                            outputPixels.data[dest * 4 + 0] = greyscalePalette[c][0];
+                            outputPixels.data[dest * 4 + 1] = greyscalePalette[c][1];
+                            outputPixels.data[dest * 4 + 2] = greyscalePalette[c][2];
                             outputPixels.data[dest * 4 + 3] = 0xFF;
                         }
                     }
@@ -470,9 +464,9 @@ var editor = (function(self) {
                 for(i = 0; i < outputPixels.width; i++) {
                     var k = j * outputCanvas.width + i;
                     var c = conversions[indices[k]];
-                    outputPixels.data[k * 4 + 0] = FourColors[c][0];
-                    outputPixels.data[k * 4 + 1] = FourColors[c][1];
-                    outputPixels.data[k * 4 + 2] = FourColors[c][2];
+                    outputPixels.data[k * 4 + 0] = greyscalePalette[c][0];
+                    outputPixels.data[k * 4 + 1] = greyscalePalette[c][1];
+                    outputPixels.data[k * 4 + 2] = greyscalePalette[c][2];
                     outputPixels.data[k * 4 + 3] = 0xFF;
                 }
             }

@@ -1,4 +1,4 @@
-var chr = (function(self) {
+var brewtool = (function(self) {
     var calculateTilesetSize = function(bytes) {
         var tiles = bytes.length / 16;
         if(tiles == 0) {
@@ -27,7 +27,7 @@ var chr = (function(self) {
         }
 
         return [rows, columns];
-    }
+    };
 
     var getPixelIndices = function(pixels, palette) {
         var table = {};
@@ -45,9 +45,18 @@ var chr = (function(self) {
             result[j] = table[color.join(',')];
         }
         return result;
-    }
+    };
 
-    self.load = function(bytes, canvas, format, palette) {
+    self.getGreyscalePalette = function() {
+        return [
+            [0x00, 0x00, 0x00],
+            [0x60, 0x60, 0x60],
+            [0xC0, 0xC0, 0xC0],
+            [0xFF, 0xFF, 0xFF]
+        ];
+    };
+
+    self.loadTileset = function(bytes, canvas, format, palette) {
         if(format != 'NES'
         && format != 'GB') {
             return;
@@ -99,9 +108,9 @@ var chr = (function(self) {
             }
         }
         canvas.getContext('2d').putImageData(pixels, 0, 0);
-    }
+    };
 
-    self.save = function(canvas, format, palette, callback) {
+    self.saveTileset = function(canvas, format, palette, callback) {
         if(format != 'NES'
         && format != 'GB'
         && format != 'PNG') {
@@ -156,7 +165,7 @@ var chr = (function(self) {
         }
 
         callback(new Blob([buffer], {type: "application/octet-stream"}));
-    }
+    };
 
     return self;
 })({})
