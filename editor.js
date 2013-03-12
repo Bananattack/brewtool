@@ -231,6 +231,7 @@ var editor = (function(self) {
             canvasToBlob(outputCanvas, function(blob) {
                 saveAs(blob, parts.join('.') + '.png');
             });
+            return false;
         }
 
         var fields = conversionTable.querySelectorAll('.fields input');
