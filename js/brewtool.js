@@ -207,5 +207,39 @@ var brewtool = (function(self) {
         callback(new Blob([buffer], {type: "application/octet-stream"}));
     }
 
+    self.loadSprites = function(bytes) {
+        var sprites = [];
+        var count = Math.floor(bytes.length / 4);
+        for(var i = 0; i < count; i++) {
+            sprites.push({
+                x: bytes.charCodeAt(i * 4),
+                y: bytes.charCodeAt(i * 4 + 1),
+                tile: bytes.charCodeAt(i * 4 + 2),
+                pal: bytes.charCodeAt(i * 4 + 3) & 0x07,
+                hflip: !!(bytes.charCodeAt(i * 4 + 3) & 0x20),
+                vflip: !!(bytes.charCodeAt(i * 4 + 3) & 0x40),
+                behind: !!(bytes.charCodeAt(i * 4 + 3) & 0x80)
+            });
+        }
+        return sprites;
+    }
+
+    self.saveSprites = function(sprites, callback) {
+        var bytes = [];
+        for(var i = 0; i < sprites.length; i++) {
+            var sprite = sprites[i];
+            bytes.push(sprite.x & 0xFF);
+            bytes.push(sprite.y & 0xFF);
+            bytes.push(sprite.tile & 0xFF);
+            bytes.push((sprite.pal & 0x07) | (sprite.hflip ? 0x20 : 0x00) | (sprite.vflip ? 0x40 : 0x00) | (sprite.behind ? 0x80 : 0x00));
+        }
+
+        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
+        for(var i = 0; i < bytes.length; i++) {
+            buffer[i] = bytes[i];
+        }
+        callback(new Blob([buffer], {type: "application/octet-stream"}));
+    }
+
     return self;
 })({})

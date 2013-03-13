@@ -102,7 +102,7 @@ var editor = (function(self) {
         addSpriteButton = document.createElement('input');
         addSpriteButton.setAttribute('type', 'button');
         addSpriteButton.setAttribute('value', 'Add Sprite');
-        addSpriteButton.addEventListener('click', self.addSprite);
+        addSpriteButton.addEventListener('click', function() { self.addSprite(); });
         div.appendChild(addSpriteButton);
         config.element.appendChild(div);
 
@@ -188,7 +188,14 @@ var editor = (function(self) {
         ),
         'spr': createFileLoader('spr',
             function(file, bytes) {
-                alert('spr');
+                var sprites = brewtool.loadSprites(bytes);
+                var spriteRows = spriteTable.querySelectorAll('tr'); 
+                for(var i = 0; i < spriteRows.length; i++) {
+                    spriteTable.removeChild(spriteRows[i]);
+                }
+                for(var i = 0; i < sprites.length; i++) {
+                    self.addSprite(sprites[i]);
+                }
                 currentFile = file;
             }
         ),
@@ -215,9 +222,24 @@ var editor = (function(self) {
             parts.pop();
         }
 
-        /*brewtool.savePalettes(palettes, function(blob) {
-            saveAs(blob, parts.join('.') + '.pal');
-        });*/
+        var spriteRows = spriteTable.querySelectorAll('tr');
+        var sprites = [];
+        for(var i = 0; i < spriteRows.length; i++) {
+            var row = spriteRows[i];
+            sprites.push({
+                x: Math.min(Math.max(parseInt(row.querySelector('.x').value) || 0, 0), 255),
+                y: Math.min(Math.max(parseInt(row.querySelector('.y').value) || 0, 0), 255),
+                tile: Math.min(Math.max(parseInt(row.querySelector('.tile').value) || 0, 0), inputCanvas ? Math.min(Math.floor(inputCanvas.width / 8) * Math.floor(inputCanvas.height / 8) - 1,  255) : 255),
+                pal: Math.min(Math.max(parseInt(row.querySelector('.pal').value) || 0, 0), palettes.length ? Math.min(palettes.length, 7) : 7),
+                hflip: row.querySelector('.hflip').checked,
+                vflip: row.querySelector('.vflip').checked,
+                behind: row.querySelector('.behind').checked
+            });
+        }
+
+        brewtool.saveSprites(sprites, function(blob) {
+            saveAs(blob, parts.join('.') + '.spr');
+        });
 
         return false;
     };
@@ -257,17 +279,17 @@ var editor = (function(self) {
         self.recalculate();
     }
 
-    self.addSprite = function() {
+    self.addSprite = function(data) {
         if(spriteTable.querySelectorAll('tr').length >= 40) {
             return;
         }
-
+        data = data || {};
         var tr = document.createElement('tr');
         tr.className = 'fields';
         var td = document.createElement('td');
         var input = document.createElement('input');
         input.type = 'text';
-        input.value = '8';
+        input.value = data.x || 8;
         input.className = 'x';
         td.appendChild(document.createTextNode('X:'));
         td.appendChild(input);
@@ -275,7 +297,7 @@ var editor = (function(self) {
         var td = document.createElement('td');
         var input = document.createElement('input');
         input.type = 'text';
-        input.value = '16';
+        input.value = data.y || 16;
         input.className = 'y';
         td.appendChild(document.createTextNode('Y:'));
         td.appendChild(input);
@@ -283,7 +305,7 @@ var editor = (function(self) {
         var td = document.createElement('td');
         var input = document.createElement('input');
         input.type = 'text';
-        input.value = '0';
+        input.value = data.tile || 0;
         input.className = 'tile';
         td.appendChild(document.createTextNode('Tile:'));
         td.appendChild(input);
@@ -291,7 +313,7 @@ var editor = (function(self) {
         var td = document.createElement('td');
         var input = document.createElement('input');
         input.type = 'text';
-        input.value = '0';
+        input.value = data.pal || 0;
         input.className = 'pal';
         td.appendChild(document.createTextNode('Pal:'));
         td.appendChild(input);
@@ -301,6 +323,7 @@ var editor = (function(self) {
         input.type = 'checkbox';
         input.value = '1';
         input.className = 'hflip';
+        input.checked = data.hflip || false;
         td.appendChild(input);
         td.appendChild(document.createTextNode('HFlip'));
         tr.appendChild(td);
@@ -309,8 +332,18 @@ var editor = (function(self) {
         input.type = 'checkbox';
         input.value = '1';
         input.className = 'vflip';
+        input.checked = data.vflip || false;
         td.appendChild(input);
         td.appendChild(document.createTextNode('VFlip'));
+        tr.appendChild(td);
+        var td = document.createElement('td');
+        var input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = '1';
+        input.className = 'behind';
+        input.checked = data.behind || false;
+        td.appendChild(input);
+        td.appendChild(document.createTextNode('Behind BG'));
         tr.appendChild(td);
         var td = document.createElement('td');
         var input = document.createElement('input');
@@ -379,25 +412,20 @@ var editor = (function(self) {
             var spriteRows = spriteTable.querySelectorAll('tr');
             for(var i = 0; i < spriteRows.length; i++) {
                 var row = spriteRows[i];
-                var dx = row.querySelector('.x').value - 8;
-                var dy = row.querySelector('.y').value - 16;
-                var tile = row.querySelector('.tile').value;
-                var pal = row.querySelector('.pal').value;
+                var dx = Math.min(Math.max(parseInt(row.querySelector('.x').value) || 0, 0), 255) - 8;
+                var dy = Math.min(Math.max(parseInt(row.querySelector('.y').value) || 0, 0), 255) - 16;
+                var tile = Math.min(Math.max(parseInt(row.querySelector('.tile').value) || 0, 0), Math.min(Math.floor(inputCanvas.width / 8) * Math.floor(inputCanvas.height / 8) - 1,  255));
+                var pal = Math.min(Math.max(parseInt(row.querySelector('.pal').value) || 0, 0), Math.min(palettes.length, 7));
                 var hflip = row.querySelector('.hflip').checked;
                 var vflip = row.querySelector('.vflip').checked;
 
                 var sx = tile * 8 % inputCanvas.width;
                 var sy = Math.floor(tile * 8 / inputCanvas.width) * 8;
-                if(sy >= inputCanvas.height)
-                {
-                    continue;
-                }
-
                 for(var y = 0; y < 8; y++) {
                     for(var x = 0; x < 8; x++) {
                         if(dx + x < 0 || dx + x >= outputCanvas.width || dy + y < 0 || dy + y >= outputCanvas.height) continue;
 
-                        var s = (sy + y) * inputCanvas.width + (sx + x);
+                        var s = (sy + (vflip ? 7 - y : y)) * inputCanvas.width + (sx + (hflip ? 7 - x : x));
                         var d = ((dy + y) * outputCanvas.width + (dx + x)) * 4;
                         if(indices[s]) {
                             var c = palettes[pal][indices[s]];
@@ -408,6 +436,11 @@ var editor = (function(self) {
                         }
                     }
                 }
+
+                row.querySelector('.x').value = dx + 8;
+                row.querySelector('.y').value = dy + 16;
+                row.querySelector('.tile').value = tile;
+                row.querySelector('.pal').value = pal;
             }
 
             outputContext.putImageData(outputPixels, 0, 0);
