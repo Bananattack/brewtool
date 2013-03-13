@@ -84,7 +84,7 @@ a, a:visited, a:hover, a:active,
     margin-left: 32px;
 }
 
-.conversion_table, .preview {
+.conversion_table, .preview, .tileset {
     display: none;
 }
 
@@ -93,6 +93,11 @@ a, a:visited, a:hover, a:active,
 .conversion_table table tr td {
     border-collapse: collapse;
     border-spacing: 0;
+}
+
+
+.conversion_table th {
+    width: 32px;
 }
 
 .conversion_table td {
@@ -117,6 +122,22 @@ a, a:visited, a:hover, a:active,
     width: 24px;
     height: 16px;
     max-width: 24px;
+    max-height: 16px;
+    margin: 4px;
+    padding: 0px;
+    text-align: center;
+    border: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #FFFFFF;
+    font-weight: bold;
+}
+
+.sprites td input[type=text] {
+    min-width: 32px;
+    min-height: 16px;
+    width: 32px;
+    height: 16px;
+    max-width: 32px;
     max-height: 16px;
     margin: 4px;
     padding: 0px;
