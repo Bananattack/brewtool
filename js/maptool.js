@@ -83,7 +83,7 @@ var editor = (function(self) {
         h2.appendChild(document.createTextNode('Input'));
         div.appendChild(h2);
         var p = document.createElement('p');
-        p.appendChild(document.createTextNode('Source file may be .png or .gif. You can drag and drop files here.'));
+        p.appendChild(document.createTextNode('Source file may be .png or .gif. You can drag and drop files here. Files must adhere to GBC background specs: 4 colors max per 8x8 region, 8 palettes max'));
         div.appendChild(p);
         var p = document.createElement('p');
         p.appendChild(document.createTextNode('Tile limit: '));
