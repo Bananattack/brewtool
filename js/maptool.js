@@ -51,12 +51,15 @@ var editor = (function(self) {
     var tilesetContainer = null;
     var paletteContainer = null;
     var mapContainer = null;
+    var removeDuplicatesCheckbox = null;
+    var tileLimitField = null;
 
     var restrictions = {
         tiles: {
             width: 8,
             height: 8,
-            max: 256
+            max: 256,
+            removeDuplicates: true
         },
         attributes: {
             width: 8,
@@ -81,6 +84,20 @@ var editor = (function(self) {
         div.appendChild(h2);
         var p = document.createElement('p');
         p.appendChild(document.createTextNode('Source file may be .png or .gif. You can drag and drop files here.'));
+        div.appendChild(p);
+        var p = document.createElement('p');
+        p.appendChild(document.createTextNode('Tile limit: '));
+        tileLimitField = document.createElement('input');
+        tileLimitField.setAttribute('type', 'text');
+        tileLimitField.setAttribute('value', '256');
+        p.appendChild(tileLimitField);
+        p.appendChild(document.createTextNode('\u00A0\u00A0\u00A0\u00A0'));
+        removeDuplicatesCheckbox = document.createElement('input');
+        removeDuplicatesCheckbox.setAttribute('type', 'checkbox');
+        removeDuplicatesCheckbox.setAttribute('value', '');
+        removeDuplicatesCheckbox.setAttribute('checked', 'checked');
+        p.appendChild(removeDuplicatesCheckbox);
+        p.appendChild(document.createTextNode('Remove Duplicate Tiles'));
         div.appendChild(p);
         var fileContainer = document.createElement('div');
         fileContainer.className = 'file_picker';
@@ -440,6 +457,7 @@ var editor = (function(self) {
 
     self.loadFile = function(file) {
         filePicker.value = '';
+
         if(file.type === 'image/png' || file.type === 'image/gif') {
             var image = new Image;
             image.onload = function() {
@@ -457,6 +475,9 @@ var editor = (function(self) {
 
                 var context = inputCanvas.getContext('2d')
                 context.drawImage(image, 0, 0);
+
+                restrictions.tiles.max = +tileLimitField.value;
+                restrictions.tiles.removeDuplicates = removeDuplicatesCheckbox.checked;
 
                 var pixels = context.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
                 var attributeMap = generateAttributeMap(pixels);
@@ -835,6 +856,9 @@ var editor = (function(self) {
             for(var x = 0; x < pixels.width; x += restrictions.attributes.width)  {
                 var t = calculateTilePattern(pixels, attributeMap, x, y);
                 var k = t.join(',');
+                if(!restrictions.tiles.removeDuplicates) {
+                    k = index;
+                }
                 if(!tiles[k]) {
                     tiles[k] = {
                         pattern: t,
