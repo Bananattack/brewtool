@@ -461,136 +461,143 @@ var editor = (function(self) {
         if(file.type === 'image/png' || file.type === 'image/gif') {
             var image = new Image;
             image.onload = function() {
-                if(image.width % restrictions.attributes.width != 0 || image.height % restrictions.attributes.height != 0) {
-                    throw 'Image "' + file.name + '" has dimensions of '
-                        + image.width + 'x' + image.height + ', which ' 
-                        + 'are not divisible by the tile attribute size of '
-                        + restrictions.attributes.width + 'x' + restrictions.attributes.height + '!';
-                    return;
+                try {
+                    if(image.width % restrictions.attributes.width != 0 || image.height % restrictions.attributes.height != 0) {
+                        throw 'Image "' + file.name + '" has dimensions of '
+                            + image.width + 'x' + image.height + ', which ' 
+                            + 'are not divisible by the tile attribute size of '
+                            + restrictions.attributes.width + 'x' + restrictions.attributes.height + '!';
+                        return;
+                    }
+
+                    inputCanvas.width = image.width;
+                    inputCanvas.height = image.height;
+                    inputCanvas.style.display = 'block';
+
+                    var context = inputCanvas.getContext('2d')
+                    context.drawImage(image, 0, 0);
+
+                    restrictions.tiles.max = +tileLimitField.value;
+                    restrictions.tiles.removeDuplicates = removeDuplicatesCheckbox.checked;
+
+                    var pixels = context.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
+                    var attributeMap = generateAttributeMap(pixels);
+                    var tileMap = generateTileMap(pixels, attributeMap);
+                    var paletteTable = generatePaletteTable(attributeMap.palettes);
+
+                    tilesetContainer.innerHTML = '';
+                    tileMap.tileCanvas.style.display = 'block';
+                    var h2 = document.createElement('h2');
+                    h2.appendChild(document.createTextNode('Tileset'));
+                    tilesetContainer.appendChild(h2);
+                    var p = document.createElement('p');
+                    p.appendChild(document.createTextNode(tileMap.tiles.length + ' tile(s) of ' + restrictions.tiles.width + ' x ' + restrictions.tiles.height + ' pixels'));
+                    tilesetContainer.appendChild(p);
+                    tilesetContainer.appendChild(tileMap.tileCanvas);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveCHR;
+                    a.appendChild(document.createTextNode('Save raw GB tileset (.chr)...'));
+                    p.appendChild(a);
+                    tilesetContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveTilePNG;
+                    a.appendChild(document.createTextNode('Save tile set (.tiles.png)...'));
+                    p.appendChild(a);
+                    tilesetContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveCombinedPNG;
+                    a.appendChild(document.createTextNode('Save combined tile set (.combined.png)...'));
+                    p.appendChild(a);
+                    tilesetContainer.appendChild(p);
+
+                    paletteContainer.innerHTML = '';
+                    var h2 = document.createElement('h2');
+                    h2.appendChild(document.createTextNode('Palettes'));
+                    paletteContainer.appendChild(h2);
+                    var p = document.createElement('p');
+                    p.appendChild(document.createTextNode(attributeMap.palettes.length + ' palette(s) of ' + restrictions.colors.max + ' colors'));
+                    paletteContainer.appendChild(p);
+                    paletteContainer.appendChild(paletteTable);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.savePal;
+                    a.appendChild(document.createTextNode('Save raw 15-bit palette (.pal)...'));
+                    p.appendChild(a);
+                    paletteContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveAttrPNG;
+                    a.appendChild(document.createTextNode('Save attribute set (.attributes.png)...'));
+                    p.appendChild(a);
+                    paletteContainer.appendChild(p);
+
+                    mapContainer.innerHTML = '';
+                    var h2 = document.createElement('h2');
+                    h2.appendChild(document.createTextNode('Map'));
+                    mapContainer.appendChild(h2);
+                    var p = document.createElement('p');
+                    p.appendChild(document.createTextNode('Attribute Map: ' + attributeMap.width + ' x ' + attributeMap.height));
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    p.appendChild(document.createTextNode('Tile Map: ' + tileMap.width + ' x ' + tileMap.height));
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveTileMapCSV;
+                    a.appendChild(document.createTextNode('Save tile map (.tiles.csv)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveAttrMapCSV;
+                    a.appendChild(document.createTextNode('Save attribute map (.attributes.csv)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveCombinedMapCSV;
+                    a.appendChild(document.createTextNode('Save combined map (.combined.csv)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveCombinedMapTiled;
+                    a.appendChild(document.createTextNode('Save combined tiled map (.combined.tmx)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    p.appendChild(document.createTextNode('Binary formats have the following layout: width : uint16, height : uint16, data : uint8[width * height]'));
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveTileMapDat;
+                    a.appendChild(document.createTextNode('Save binary tile map (.tiles.dat)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+                    var p = document.createElement('p');
+                    var a = document.createElement('a');
+                    a.onclick = self.saveAttrMapDat;
+                    a.appendChild(document.createTextNode('Save binary attribute map (.attributes.dat)...'));
+                    p.appendChild(a);
+                    mapContainer.appendChild(p);
+
+                    tilesetContainer.className = 'section tileset';
+                    paletteContainer.className = 'section palettes';
+                    mapContainer.className = 'section map';
+
+                    currentMap = {
+                        tileMap: tileMap,
+                        attributeMap: attributeMap,
+                    };
+                } catch(e) {
+                    alert(e);
+                    console.log(e);
+                    throw e;
                 }
 
-                inputCanvas.width = image.width;
-                inputCanvas.height = image.height;
-                inputCanvas.style.display = 'block';
-
-                var context = inputCanvas.getContext('2d')
-                context.drawImage(image, 0, 0);
-
-                restrictions.tiles.max = +tileLimitField.value;
-                restrictions.tiles.removeDuplicates = removeDuplicatesCheckbox.checked;
-
-                var pixels = context.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
-                var attributeMap = generateAttributeMap(pixels);
-                var tileMap = generateTileMap(pixels, attributeMap);
-                var paletteTable = generatePaletteTable(attributeMap.palettes);
-
-                tilesetContainer.innerHTML = '';
-                tileMap.tileCanvas.style.display = 'block';
-                var h2 = document.createElement('h2');
-                h2.appendChild(document.createTextNode('Tileset'));
-                tilesetContainer.appendChild(h2);
-                var p = document.createElement('p');
-                p.appendChild(document.createTextNode(tileMap.tiles.length + ' tile(s) of ' + restrictions.tiles.width + ' x ' + restrictions.tiles.height + ' pixels'));
-                tilesetContainer.appendChild(p);
-                tilesetContainer.appendChild(tileMap.tileCanvas);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveCHR;
-                a.appendChild(document.createTextNode('Save raw GB tileset (.chr)...'));
-                p.appendChild(a);
-                tilesetContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveTilePNG;
-                a.appendChild(document.createTextNode('Save tile set (.tiles.png)...'));
-                p.appendChild(a);
-                tilesetContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveCombinedPNG;
-                a.appendChild(document.createTextNode('Save combined tile set (.combined.png)...'));
-                p.appendChild(a);
-                tilesetContainer.appendChild(p);
-
-                paletteContainer.innerHTML = '';
-                var h2 = document.createElement('h2');
-                h2.appendChild(document.createTextNode('Palettes'));
-                paletteContainer.appendChild(h2);
-                var p = document.createElement('p');
-                p.appendChild(document.createTextNode(attributeMap.palettes.length + ' palette(s) of ' + restrictions.colors.max + ' colors'));
-                paletteContainer.appendChild(p);
-                paletteContainer.appendChild(paletteTable);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.savePal;
-                a.appendChild(document.createTextNode('Save raw 15-bit palette (.pal)...'));
-                p.appendChild(a);
-                paletteContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveAttrPNG;
-                a.appendChild(document.createTextNode('Save attribute set (.attributes.png)...'));
-                p.appendChild(a);
-                paletteContainer.appendChild(p);
-
-                mapContainer.innerHTML = '';
-                var h2 = document.createElement('h2');
-                h2.appendChild(document.createTextNode('Map'));
-                mapContainer.appendChild(h2);
-                var p = document.createElement('p');
-                p.appendChild(document.createTextNode('Attribute Map: ' + attributeMap.width + ' x ' + attributeMap.height));
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                p.appendChild(document.createTextNode('Tile Map: ' + tileMap.width + ' x ' + tileMap.height));
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveTileMapCSV;
-                a.appendChild(document.createTextNode('Save tile map (.tiles.csv)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveAttrMapCSV;
-                a.appendChild(document.createTextNode('Save attribute map (.attributes.csv)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveCombinedMapCSV;
-                a.appendChild(document.createTextNode('Save combined map (.combined.csv)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveCombinedMapTiled;
-                a.appendChild(document.createTextNode('Save combined tiled map (.combined.tmx)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                p.appendChild(document.createTextNode('Binary formats have the following layout: width : uint16, height : uint16, data : uint8[width * height]'));
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveTileMapDat;
-                a.appendChild(document.createTextNode('Save binary tile map (.tiles.dat)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-                var p = document.createElement('p');
-                var a = document.createElement('a');
-                a.onclick = self.saveAttrMapDat;
-                a.appendChild(document.createTextNode('Save binary attribute map (.attributes.dat)...'));
-                p.appendChild(a);
-                mapContainer.appendChild(p);
-
-                tilesetContainer.className = 'section tileset';
-                paletteContainer.className = 'section palettes';
-                mapContainer.className = 'section map';
-
-                currentMap = {
-                    tileMap: tileMap,
-                    attributeMap: attributeMap,
-                };
             };
             image.src = URL.createObjectURL(file);
         }
@@ -630,7 +637,7 @@ var editor = (function(self) {
                     colors._size++;
 
                     if(colors._size > restrictions.colors.max) {
-                        throw 'too many colors';
+                        throw 'too many colors in chunk from (' + x + ', ' + y + ') to (' + (x + restrictions.attributes.width - 1)  + ', ' + (y + restrictions.attributes.height - 1) + ')';
                     }
                 }
             }
