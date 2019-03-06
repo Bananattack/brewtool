@@ -1,0 +1,675 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"></meta>
+    <title>brewtool - Palette Tool</title>
+    <style rel="stylesheet" type="text/css" href="../css/editor.css">
+
+body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #5E89D0;
+    color: #FFFFFF;
+}
+
+a, a:visited, a:hover, a:active,
+.page > h1 a, .page > h1 a:visited, .page > h1 a:hover, .page > h1 a:active {
+    border: 0;
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+.page {
+    margin-left: auto;
+    margin-right: auto;
+    width: 800px;
+    text-shadow: 2px 2px 0px #556677;
+}
+
+.page a {
+    font-style: normal;
+    color: #A4F0F7;
+}
+
+.page a:hover, .page a:active
+{
+    font-style: normal;
+    color: #F0F7A4;
+}
+
+.page > h1 {
+    font-size: 6em;
+    padding-bottom: 16px;
+    margin: 0;
+    margin-top: 16px;
+    margin-bottom: 32px;
+    border: 16px solid #5E89D0;
+    border-bottom: 16px solid #5980C9;
+    border-radius: 64px;
+    text-shadow: 3px 3px 0px #556677;
+    letter-spacing:4px;
+}
+
+.page > h2 {
+    margin-left: 24px;
+}
+
+.page > p {
+    margin-left: 24px;
+    font-size: 1.2em;
+    font-style: italic;
+}
+
+.section {
+    background-color: #5980C9;
+    color: #FFFFFF;
+    padding: 4px;
+    padding-left: 16px;
+    border-radius: 16px;
+    margin: 16px;
+}
+
+.editor canvas {
+    display: none;
+    margin: 8px 0px;
+}
+
+.format {
+    display: inline-block;
+    width: 116px;
+}
+
+.editor select {
+    width: 150px;
+}
+
+.section h2 {
+    border-bottom: 2px solid #5078C0;
+}
+
+.editor input {
+    margin-left: 32px;
+}
+
+.conversion_table, .preview, .tileset {
+    display: none;
+}
+
+.conversion_table table,
+.conversion_table table tr,
+.conversion_table table tr td {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+
+.conversion_table th {
+    width: 32px;
+}
+
+.conversion_table td {
+    height: 16px;
+    min-height: 16px;
+}
+
+.conversion_table td .color {
+    width: 16px;
+    height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    margin: 4px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #333333;
+}
+
+.conversion_table td input {
+    min-width: 24px;
+    min-height: 16px;
+    width: 24px;
+    height: 16px;
+    max-width: 24px;
+    max-height: 16px;
+    margin: 4px;
+    padding: 0px;
+    text-align: center;
+    border: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #FFFFFF;
+    font-weight: bold;
+}
+
+.sprites td input[type=text] {
+    min-width: 32px;
+    min-height: 16px;
+    width: 32px;
+    height: 16px;
+    max-width: 32px;
+    max-height: 16px;
+    margin: 4px;
+    padding: 0px;
+    text-align: center;
+    border: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background-color: #FFFFFF;
+    font-weight: bold;
+}
+
+.conversion_table td {
+    padding: 0px;
+    text-align: center;
+}
+
+.conversion_table tr.fields {
+    border: 1px solid #666666;
+}
+
+.conversion_table tr.fields td {
+    cursor: text;
+    background-color: #FFFFFF;
+    border: 1px solid #cccccc;
+}
+
+.conversion_table tr.hex td {
+    padding: 8px;
+}
+</style>
+    <script type="text/javascript">
+var brewtool = (function(self) {
+    var calculateTilesetSize = function(bytes) {
+        var tiles = bytes.length / 16;
+        if(tiles == 0) {
+            return;
+        }
+
+        // Try to fit this in a nice rectangular region, so it's easier to view.
+        var columns = 0;
+        var rows = 0;
+        for(var i = 16; i != 1; i /= 2) {
+            if(tiles % i == 0) {
+                if(i >= 8) {
+                    columns = i;
+                    rows = tiles / i;
+                }
+                else {
+                    rows = i;
+                    columns = tiles / i;
+                }
+                break;
+            }
+        }
+        if(columns == 0) {
+            columns = tiles;
+            rows = 1;
+        }
+
+        return [rows, columns];
+    };
+
+    var getPixelIndices = function(pixels, palette) {
+        var table = {};
+        for(var i = 0; i < palette.length; i++) {
+            table[palette[i].join(',')] = i;
+        }
+
+        var result = new Array(pixels.width * pixels.height);
+        for(var i = 0, j = 0; i < pixels.width * pixels.height * 4; i += 4, j++) {
+            var color = [
+                pixels.data[i],
+                pixels.data[i + 1],
+                pixels.data[i + 2]
+            ];
+            result[j] = table[color.join(',')];
+        }
+        return result;
+    };
+
+    self.getGreyscalePalette = function() {
+        return [
+            [0x00, 0x00, 0x00],
+            [0x60, 0x60, 0x60],
+            [0xC0, 0xC0, 0xC0],
+            [0xFF, 0xFF, 0xFF]
+        ];
+    };
+
+    self.loadTileset = function(bytes, canvas, format, palette) {
+        if(format != 'NES'
+        && format != 'GB') {
+            return;
+        }
+
+        var size = calculateTilesetSize(bytes);
+        var rows = size[0];
+        var columns = size[1];
+
+        canvas.width = columns * 8;
+        canvas.height = rows * 8;
+        var pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+
+        if(format == 'NES') {
+            for(var row = 0; row < rows; row++) {
+                for(var col = 0; col < columns; col++) {
+                    for(var j = 0; j < 8; j++) {
+                        var low = bytes.charCodeAt((row * columns + col) * 16 + j);
+                        var high = bytes.charCodeAt((row * columns + col) * 16 + j + 8);
+                        for(var i = 0; i < 8; i++) {
+                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
+                            var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+                            pixels.data[p + 0] = c[0];
+                            pixels.data[p + 1] = c[1];
+                            pixels.data[p + 2] = c[2];
+                            pixels.data[p + 3] = 0xFF;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(var row = 0; row < rows; row++) {
+                for(var col = 0; col < columns; col++) {
+                    for(var j = 0; j < 8; j++) {
+                        var index = ((row * columns + col) * 8 + j) * 2;
+                        var low = bytes.charCodeAt(index);
+                        var high = bytes.charCodeAt(index + 1);
+                        for(var i = 0; i < 8; i++) {
+                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
+                            var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+
+                            pixels.data[p + 0] = c[0];
+                            pixels.data[p + 1] = c[1];
+                            pixels.data[p + 2] = c[2];
+                            pixels.data[p + 3] = 0xFF;
+                        }
+                    }
+                }
+            }
+        }
+        canvas.getContext('2d').putImageData(pixels, 0, 0);
+    };
+
+    self.saveTileset = function(canvas, format, palette, callback) {
+        if(format != 'NES'
+        && format != 'GB'
+        && format != 'PNG') {
+            return;
+        }
+
+        var bytes = [];
+        var pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+        var indices = getPixelIndices(pixels, palette);
+        if(format == 'NES') {
+            for(var y = 0, h = canvas.height; y < h; y += 8) {
+                for(var x = 0, w = canvas.width; x < w; x += 8) {
+                    for(var j = 0; j < 8; j++) {
+                        var low = 0;
+                        for(var i = 0; i < 8; i++) {
+                            var color = indices[(y + j) * canvas.width + x + i];
+                            low = (low << 1) | (color & 0x1);
+                        }
+                        bytes.push(low);
+                    }
+                    for(var j = 0; j < 8; j++) {
+                        var high = 0;
+                        for(var i = 0; i < 8; i++) {
+                            var c = indices[(y + j) * canvas.width + x + i];
+                            high = (high << 1) | ((c & 0x2) >> 1);
+                        }
+                        bytes.push(high);
+                    }
+                }
+            }
+        } else {
+            for(var y = 0, h = canvas.height; y < h; y += 8) {
+                for(var x = 0, w = canvas.width; x < w; x += 8) {
+                    for(var j = 0; j < 8; j++) {
+                        var low = 0;
+                        var high = 0;
+                        for(var i = 0; i < 8; i++) {
+                            var color = indices[(y + j) * canvas.width + x + i];
+                            low = (low << 1) | (color & 0x1);
+                            high = (high << 1) | ((color & 0x2) >> 1);
+                        }
+                        bytes.push(low);
+                        bytes.push(high);
+                    }
+                }
+            }
+        }
+
+        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
+        for(var i = 0; i < bytes.length; i++) {
+            buffer[i] = bytes[i];
+        }
+
+        callback(new Blob([buffer], {type: "application/octet-stream"}));
+    };
+
+    self.loadPalettes = function(bytes) {
+        var palettes = [];
+        var count = Math.floor(bytes.length / 8);
+        for(var i = 0; i < count; i++) {
+            var palette = [];
+            for(var j = 0; j < 4; j++) {
+                var v = bytes.charCodeAt(i * 8 + j * 2) | (bytes.charCodeAt(i * 8 + j * 2 + 1) << 8)
+                palette.push([
+                    (v & 0x1F) << 3,
+                    ((v >> 5) & 0x1F) << 3,
+                    ((v >> 10) & 0x1F) << 3,
+                ]);
+            }
+            palettes.push(palette);
+        }
+        return palettes;
+    }
+
+    self.savePalettes = function(palettes, callback) {
+        var bytes = [];
+        for(var i = 0; i < palettes.length; i++) {
+            var palette = palettes[i];
+            for(var j = 0; j < palette.length; j++) {
+                var r = Math.floor(palette[j][0] * 32 / 256);
+                var g = Math.floor(palette[j][1] * 32 / 256);
+                var b = Math.floor(palette[j][2] * 32 / 256);
+                var c = (r | g << 5 | b << 10);
+
+                bytes.push(c & 0xFF);
+                bytes.push((c >> 8) & 0xFF);
+            }
+        }
+
+        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
+        for(var i = 0; i < bytes.length; i++) {
+            buffer[i] = bytes[i];
+        }
+        callback(new Blob([buffer], {type: "application/octet-stream"}));
+    }
+
+    self.loadSprites = function(bytes) {
+        var sprites = [];
+        var count = Math.floor(bytes.length / 4);
+        for(var i = 0; i < count; i++) {
+            sprites.push({
+                x: bytes.charCodeAt(i * 4),
+                y: bytes.charCodeAt(i * 4 + 1),
+                tile: bytes.charCodeAt(i * 4 + 2),
+                pal: bytes.charCodeAt(i * 4 + 3) & 0x07,
+                hflip: !!(bytes.charCodeAt(i * 4 + 3) & 0x20),
+                vflip: !!(bytes.charCodeAt(i * 4 + 3) & 0x40),
+                behind: !!(bytes.charCodeAt(i * 4 + 3) & 0x80)
+            });
+        }
+        return sprites;
+    }
+
+    self.saveSprites = function(sprites, callback) {
+        var bytes = [];
+        for(var i = 0; i < sprites.length; i++) {
+            var sprite = sprites[i];
+            bytes.push(sprite.x & 0xFF);
+            bytes.push(sprite.y & 0xFF);
+            bytes.push(sprite.tile & 0xFF);
+            bytes.push((sprite.pal & 0x07) | (sprite.hflip ? 0x20 : 0x00) | (sprite.vflip ? 0x40 : 0x00) | (sprite.behind ? 0x80 : 0x00));
+        }
+
+        var buffer = new Uint8Array(new ArrayBuffer(bytes.length));
+        for(var i = 0; i < bytes.length; i++) {
+            buffer[i] = bytes[i];
+        }
+        callback(new Blob([buffer], {type: "application/octet-stream"}));
+    }
+
+    return self;
+})({})
+</script>
+    <script type="text/javascript">
+var editor = (function(self) {
+    var saveAs =
+        window.webkitSaveAs
+        || window.mozSaveAs
+        || window.msSaveAs
+        || window.navigator.msSaveBlob && function(blob, name) {
+                    return window.navigator.msSaveBlob(blob, name);
+            }
+        || function(blob, name) {
+            var click = document.createEvent("MouseEvent");
+            click.initMouseEvent("click", true, true, window, 0, 
+                event.screenX, event.screenY, event.clientX, event.clientY, 
+                event.ctrlKey, event.altKey, event.shiftKey, event.metaKey, 
+                0, null);
+            var a = document.createElement('a');
+            a.setAttribute('href', URL.createObjectURL(blob));
+            a.setAttribute('download', name);
+            a.dispatchEvent(click);
+        };
+
+    var inputCanvas = null;
+    var inputContext = null;
+    var filePicker = null;
+    var saveButton = null;
+    var conversionTable = null;
+    var palettes = [];
+    var currentFile = null;
+
+    self.init = function(config) {
+        var div = document.createElement('div');
+        div.className = 'section';
+        var h2 = document.createElement('h2');
+        h2.appendChild(document.createTextNode('Input'));
+        div.appendChild(h2);
+        var p = document.createElement('p');
+        p.appendChild(document.createTextNode('Source file may be .pal, .png or .gif. You can drag and drop files here.'));
+        div.appendChild(p);
+        var span = document.createElement('span');
+        span.className = 'format';
+        span.appendChild(document.createTextNode('Input Image:'));
+        div.appendChild(span);
+        filePicker = document.createElement('input');
+        filePicker.setAttribute('type', 'file');
+        filePicker.addEventListener('change', self.changeFile);
+        div.appendChild(filePicker);
+        inputCanvas = document.createElement('canvas');
+        inputCanvas.appendChild(document.createTextNode('This application requires HTML5 support.'));
+        inputCanvas.width = 0;
+        inputCanvas.height = 0;
+        div.appendChild(inputCanvas);
+        config.element.appendChild(div);
+
+        var div = document.createElement('div');
+        div.className = 'conversion_table section';
+        conversionTable = div;
+        config.element.appendChild(conversionTable);
+
+        var div = document.createElement('div');
+        div.className = 'section';
+        var h2 = document.createElement('h2');
+        h2.appendChild(document.createTextNode('Output'));
+        div.appendChild(h2);
+        var span = document.createElement('span');
+        span.className = 'format';
+        span.appendChild(document.createTextNode('Output Palette:'));
+        div.appendChild(span);
+        saveButton = document.createElement('input');
+        saveButton.setAttribute('type', 'button');
+        saveButton.setAttribute('value', 'Save File');
+        saveButton.addEventListener('click', self.saveFile);
+        div.appendChild(saveButton);
+        config.element.appendChild(div);
+
+        inputContext = inputCanvas.getContext('2d');
+
+        document.ondragover = function() { return false; };
+        document.ondragend = function() { return false; };
+        document.ondrop = self.changeFile;
+    }
+
+    self.changeFile = function(event) {
+        event.preventDefault();
+
+        var files = (event.dataTransfer ? event.dataTransfer : event.target).files;
+        if(files.length) {
+            var file = files[0];
+            currentFile = file;
+            self.loadFile(file);
+        }
+        return false;
+    };
+
+    self.loadFile = function(file) {
+        filePicker.value = '';
+        if(file.type === 'image/png' || file.type === 'image/gif') {
+            var image = new Image;
+            image.onload = function() {
+                inputCanvas.width = image.width;
+                inputCanvas.height = image.height;
+                inputContext.drawImage(image, 0, 0);
+
+                try {
+                    palettes = self.getPalettes(inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height));
+                } catch(e) {
+                    alert(e);
+                }
+                self.setup();
+            };
+            image.src = URL.createObjectURL(file);
+        } else {
+            var extension = file.name.split('.').pop();
+            if(extension == 'pal') {
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    palettes = brewtool.loadPalettes(event.target.result);
+                    self.setup();
+                };
+                reader.readAsBinaryString(file);
+            }
+        }
+    };
+
+    self.saveFile = function(event) {
+        event.preventDefault();
+
+        if(currentFile === null) {
+            return false;
+        }
+
+        var parts = currentFile.name.split('.');
+        parts.pop();
+
+        brewtool.savePalettes(palettes, function(blob) {
+            saveAs(blob, parts.join('.') + '.pal');
+        });
+
+        return false;
+    };
+
+    self.getPalettes = function(pixels) {
+        // RGB Image containing rows of colors.
+        // Treat each unique row as a palette.
+        var palettes = [];
+        var rows = {}
+        for(y = 0; y < pixels.height; y++) {
+            var row = []
+            var prev = null;
+            for(x = 0; x < pixels.width; x++) {
+                var i = (y * pixels.width + x) * 4;
+                var color = [
+                    pixels.data[i],
+                    pixels.data[i + 1],
+                    pixels.data[i + 2]
+                ];
+                if(prev != color.join(',')) {
+                    prev = color.join(',')
+                    row.push(prev);
+                }
+            }
+            
+            var N = 4;
+            while(row.length < N) {
+                row.unshift(row[0]);
+            }
+            while(row.length > N) {
+                row.pop();
+            }
+
+            row = row.join(':');
+            if(!rows[row]) {
+                rows[row] = true;
+                var items = row.split(':');
+                var pal = [];
+                for(var i = 0; i < items.length; i++) {
+                    pal.push(items[i].split(','));
+                }
+
+                palettes.push(pal);
+                if(palettes.length > 16) {
+                    throw 'That is a lot of palettes. You might be doing this wrong.';
+                }
+            }
+        }
+        return palettes;
+    }
+
+    self.setup = function() {
+        while(conversionTable.hasChildNodes()) {
+            conversionTable.removeChild(conversionTable.lastChild);
+        }
+
+        var h2 = document.createElement('h2');
+        h2.appendChild(document.createTextNode('Palettes'));
+        conversionTable.appendChild(h2);
+
+        var table = document.createElement('table');        
+        for(var i = 0; i < palettes.length; i++) {
+            var palette = palettes[i];
+
+            var tr = document.createElement('tr');
+            tr.className = 'source_palette';
+            for(var j = 0; j < palette.length; j++) {
+                var td = document.createElement('td');
+                var div = document.createElement('div');
+                div.className = 'color';
+                div.style.backgroundColor = 'rgb(' + palette[j].join(',') + ')';
+                td.appendChild(div);
+                tr.appendChild(td);
+            }
+            table.appendChild(tr);
+
+            var tr = document.createElement('tr');
+            tr.className = 'hex';
+            for(var j = 0; j < palette.length; j++) {
+                (function() {
+                    var td = document.createElement('td');
+
+                    var r = Math.floor(palette[j][0] * 32 / 256);
+                    var g = Math.floor(palette[j][1] * 32 / 256);
+                    var b = Math.floor(palette[j][2] * 32 / 256);
+
+                    td.appendChild(document.createTextNode('0x' + (r | g << 5 | b << 10 | 1 << 16).toString(16).substring(1).toUpperCase()));
+                    tr.appendChild(td);
+                })();
+            }
+            table.appendChild(tr);
+        }
+
+        conversionTable.style.display = 'block';
+        conversionTable.appendChild(table);
+    }
+
+    return self;
+})({});
+ 
+
+
+</script>
+</head>
+<body class="page">
+    <h1><a href="../index.html">brewtool</a></h1>
+    <h2>Palette Tool &mdash; by Andrew G. Crowell</h2>
+    <p>For extracting 15-bit RGB palettes from images. Unique rows within an image, of up to 4 colors, become their own palette.</p>
+    <div class="editor"></div>
+    <script type="text/javascript">
+        editor.init({
+            element: document.querySelector('.editor'),
+        })
+    </script>
+    <p>see also: <a href="https://github.com/Bananattack/brewtool">(source code)</a></p>
+</body>
+</html>
