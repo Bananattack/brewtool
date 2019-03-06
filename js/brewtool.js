@@ -57,11 +57,6 @@ var brewtool = (function(self) {
     };
 
     self.loadTileset = function(bytes, canvas, format, palette) {
-        if(format != 'NES'
-        && format != 'GB') {
-            return;
-        }
-
         var size = calculateTilesetSize(bytes);
         var rows = size[0];
         var columns = size[1];
@@ -70,93 +65,207 @@ var brewtool = (function(self) {
         canvas.height = rows * 8;
         var pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
 
-        if(format == 'NES') {
-            for(var row = 0; row < rows; row++) {
-                for(var col = 0; col < columns; col++) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = bytes.charCodeAt((row * columns + col) * 16 + j);
-                        var high = bytes.charCodeAt((row * columns + col) * 16 + j + 8);
-                        for(var i = 0; i < 8; i++) {
-                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
-                            var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
-                            pixels.data[p + 0] = c[0];
-                            pixels.data[p + 1] = c[1];
-                            pixels.data[p + 2] = c[2];
-                            pixels.data[p + 3] = 0xFF;
+        switch(format) {
+            case 'NES':
+            case 'NES_8x8':
+                for(var row = 0; row < rows; row++) {
+                    for(var col = 0; col < columns; col++) {
+                        var index = (row * columns + col) * 8 * 2;
+                        for(var j = 0; j < 8; j++) {
+                            var low = bytes.charCodeAt(index + j);
+                            var high = bytes.charCodeAt(index + j + 8);
+                            for(var i = 0; i < 8; i++) {
+                                var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
+                                var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+                                pixels.data[p + 0] = c[0];
+                                pixels.data[p + 1] = c[1];
+                                pixels.data[p + 2] = c[2];
+                                pixels.data[p + 3] = 0xFF;
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            for(var row = 0; row < rows; row++) {
-                for(var col = 0; col < columns; col++) {
-                    for(var j = 0; j < 8; j++) {
-                        var index = ((row * columns + col) * 8 + j) * 2;
-                        var low = bytes.charCodeAt(index);
-                        var high = bytes.charCodeAt(index + 1);
-                        for(var i = 0; i < 8; i++) {
-                            var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
-                            var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+                break;
+            case 'NES_8x16':
+                for(var row = 0; row < rows / 2; row++) {
+                    for(var col = 0; col < columns; col++) {
+                        var index = (row * columns + col) * 16 * 2;
+                        for(var j = 0; j < 8; j++) {
+                            var low = bytes.charCodeAt(index + j);
+                            var high = bytes.charCodeAt(index + j + 8);
+                            for(var i = 0; i < 8; i++) {
+                                var p = ((row * 16 + j) * columns * 8 + (col * 8 + i)) * 4;
+                                var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+                                pixels.data[p + 0] = c[0];
+                                pixels.data[p + 1] = c[1];
+                                pixels.data[p + 2] = c[2];
+                                pixels.data[p + 3] = 0xFF;
+                            }
+                        }
+                        for(var j = 0; j < 8; j++) {
+                            var low = bytes.charCodeAt(index + j + 16);
+                            var high = bytes.charCodeAt(index + j + 24);
+                            for(var i = 0; i < 8; i++) {
+                                var p = ((row * 16 + (j + 8)) * columns * 8 + (col * 8 + i)) * 4;
+                                var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+                                pixels.data[p + 0] = c[0];
+                                pixels.data[p + 1] = c[1];
+                                pixels.data[p + 2] = c[2];
+                                pixels.data[p + 3] = 0xFF;
+                            }
+                        }                        
+                    }
+                }
+                break;
+            case 'GB':
+            case 'GB_8x8':
+                for(var row = 0; row < rows; row++) {
+                    for(var col = 0; col < columns; col++) {
+                        for(var j = 0; j < 8; j++) {
+                            var index = ((row * columns + col) * 8 + j) * 2;
+                            var low = bytes.charCodeAt(index);
+                            var high = bytes.charCodeAt(index + 1);
+                            for(var i = 0; i < 8; i++) {
+                                var p = ((row * 8 + j) * columns * 8 + (col * 8 + i)) * 4;
+                                var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
 
-                            pixels.data[p + 0] = c[0];
-                            pixels.data[p + 1] = c[1];
-                            pixels.data[p + 2] = c[2];
-                            pixels.data[p + 3] = 0xFF;
+                                pixels.data[p + 0] = c[0];
+                                pixels.data[p + 1] = c[1];
+                                pixels.data[p + 2] = c[2];
+                                pixels.data[p + 3] = 0xFF;
+                            }
                         }
                     }
                 }
-            }
+                break;
+            case 'GB_8x16':
+                for(var row = 0; row < rows / 2; row++) {
+                    for(var col = 0; col < columns; col++) {
+                        for(var j = 0; j < 16; j++) {
+                            var index = ((row * columns + col) * 16 + j) * 2;
+                            var low = bytes.charCodeAt(index);
+                            var high = bytes.charCodeAt(index + 1);
+                            for(var i = 0; i < 8; i++) {
+                                var p = ((row * 16 + j) * columns * 8 + (col * 8 + i)) * 4;
+                                var c = palette[((high & (1 << (7 - i))) ? 2 : 0) | ((low & (1 << (7 - i))) ? 1 : 0)]
+
+                                pixels.data[p + 0] = c[0];
+                                pixels.data[p + 1] = c[1];
+                                pixels.data[p + 2] = c[2];
+                                pixels.data[p + 3] = 0xFF;
+                            }
+                        }
+                    }
+                }
+                break;
+            default: return;
         }
         canvas.getContext('2d').putImageData(pixels, 0, 0);
     };
 
     self.saveTileset = function(canvas, format, palette, callback) {
-        if(format != 'NES'
-        && format != 'GB'
-        && format != 'PNG') {
-            return;
-        }
-
         var bytes = [];
         var pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
         var indices = getPixelIndices(pixels, palette);
-        if(format == 'NES') {
-            for(var y = 0, h = canvas.height; y < h; y += 8) {
-                for(var x = 0, w = canvas.width; x < w; x += 8) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var color = indices[(y + j) * canvas.width + x + i];
-                            low = (low << 1) | (color & 0x1);
+
+        switch (format) {
+            case 'NES':
+            case 'NES_8x8':
+                for(var y = 0, h = canvas.height; y < h; y += 8) {
+                    for(var x = 0, w = canvas.width; x < w; x += 8) {
+                        for(var j = 0; j < 8; j++) {
+                            var low = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var color = indices[(y + j) * canvas.width + x + i];
+                                low = (low << 1) | (color & 0x1);
+                            }
+                            bytes.push(low);
                         }
-                        bytes.push(low);
-                    }
-                    for(var j = 0; j < 8; j++) {
-                        var high = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var c = indices[(y + j) * canvas.width + x + i];
-                            high = (high << 1) | ((c & 0x2) >> 1);
+                        for(var j = 0; j < 8; j++) {
+                            var high = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var c = indices[(y + j) * canvas.width + x + i];
+                                high = (high << 1) | ((c & 0x2) >> 1);
+                            }
+                            bytes.push(high);
                         }
-                        bytes.push(high);
-                    }
-                }
-            }
-        } else {
-            for(var y = 0, h = canvas.height; y < h; y += 8) {
-                for(var x = 0, w = canvas.width; x < w; x += 8) {
-                    for(var j = 0; j < 8; j++) {
-                        var low = 0;
-                        var high = 0;
-                        for(var i = 0; i < 8; i++) {
-                            var color = indices[(y + j) * canvas.width + x + i];
-                            low = (low << 1) | (color & 0x1);
-                            high = (high << 1) | ((color & 0x2) >> 1);
-                        }
-                        bytes.push(low);
-                        bytes.push(high);
                     }
                 }
-            }
+                break;
+            case 'NES_8x16':
+                for(var y = 0, h = canvas.height; y < h; y += 16) {
+                    for(var x = 0, w = canvas.width; x < w; x += 8) {
+                        for(var j = 0; j < 8; j++) {
+                            var low = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var color = indices[(y + j) * canvas.width + x + i];
+                                low = (low << 1) | (color & 0x1);
+                            }
+                            bytes.push(low);
+                        }
+                        for(var j = 0; j < 8; j++) {
+                            var high = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var c = indices[(y + j) * canvas.width + x + i];
+                                high = (high << 1) | ((c & 0x2) >> 1);
+                            }
+                            bytes.push(high);
+                        }
+                        for(var j = 0; j < 8; j++) {
+                            var low = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var color = indices[(y + j + 8) * canvas.width + x + i];
+                                low = (low << 1) | (color & 0x1);
+                            }
+                            bytes.push(low);
+                        }
+                        for(var j = 0; j < 8; j++) {
+                            var high = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var c = indices[(y + j + 8) * canvas.width + x + i];
+                                high = (high << 1) | ((c & 0x2) >> 1);
+                            }
+                            bytes.push(high);       
+                        }                 
+                    }
+                }
+                break;                
+            case 'GB':
+            case 'GB_8x8':
+                for(var y = 0, h = canvas.height; y < h; y += 8) {
+                    for(var x = 0, w = canvas.width; x < w; x += 8) {
+                        for(var j = 0; j < 8; j++) {
+                            var low = 0;
+                            var high = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var color = indices[(y + j) * canvas.width + x + i];
+                                low = (low << 1) | (color & 0x1);
+                                high = (high << 1) | ((color & 0x2) >> 1);
+                            }
+                            bytes.push(low);
+                            bytes.push(high);
+                        }
+                    }
+                }
+                break;
+            case 'GB_8x16':
+                for(var y = 0, h = canvas.height; y < h; y += 16) {
+                    for(var x = 0, w = canvas.width; x < w; x += 8) {
+                        for(var j = 0; j < 16; j++) {
+                            var low = 0;
+                            var high = 0;
+                            for(var i = 0; i < 8; i++) {
+                                var color = indices[(y + j) * canvas.width + x + i];
+                                low = (low << 1) | (color & 0x1);
+                                high = (high << 1) | ((color & 0x2) >> 1);
+                            }
+                            bytes.push(low);
+                            bytes.push(high);
+                        }
+                    }
+                }
+                break;                
+            default: return;
         }
 
         var buffer = new Uint8Array(new ArrayBuffer(bytes.length));

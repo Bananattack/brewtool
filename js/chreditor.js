@@ -78,21 +78,31 @@ var editor = (function(self) {
             }
         });
             var option = document.createElement('option');
-            option.value = 'GB';
-            option.appendChild(document.createTextNode('Game Boy'));
+            option.value = 'GB_8x8';
+            option.appendChild(document.createTextNode('Game Boy (8x8)'));
             option.setAttribute('selected', 'selected');
             inputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
-            option.value = 'NES';
-            option.appendChild(document.createTextNode('NES'));
+            option.value = 'GB_8x16';
+            option.appendChild(document.createTextNode('Game Boy (8x16)'));
             inputFormatDropdown.appendChild(option);
+
+            var option = document.createElement('option');
+            option.value = 'NES_8x8';
+            option.appendChild(document.createTextNode('NES (8x8)'));
+            inputFormatDropdown.appendChild(option);
+
+            var option = document.createElement('option');
+            option.value = 'NES_8x16';
+            option.appendChild(document.createTextNode('NES (8x16)'));
+            inputFormatDropdown.appendChild(option);            
         div.appendChild(inputFormatDropdown);
         paddingOption = document.createElement('input');
         paddingOption.setAttribute('id', 'padding');
         paddingOption.setAttribute('type', 'checkbox');
         paddingOption.setAttribute('value', '1');
-        paddingOption.setAttribute('checked', 'checked');
+        //paddingOption.setAttribute('checked', 'checked');
         paddingOption.addEventListener('change', self.changePadding);
         div.appendChild(paddingOption);
         var label = document.createElement('label');
@@ -138,14 +148,24 @@ var editor = (function(self) {
         div.appendChild(span);
         outputFormatDropdown = document.createElement('select');
             var option = document.createElement('option');
-            option.value = 'GB';
-            option.appendChild(document.createTextNode('Game Boy (.chr)'));
+            option.value = 'GB_8x8';
+            option.appendChild(document.createTextNode('Game Boy (8x8) (.chr)'));
             option.setAttribute('selected', 'selected');
             outputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
-            option.value = 'NES';
-            option.appendChild(document.createTextNode('NES (.chr)'));
+            option.value = 'GB_8x16';
+            option.appendChild(document.createTextNode('Game Boy (8x16) (.chr)'));
+            outputFormatDropdown.appendChild(option);
+
+            var option = document.createElement('option');
+            option.value = 'NES_8x8';
+            option.appendChild(document.createTextNode('NES (8x8) (.chr)'));
+            outputFormatDropdown.appendChild(option);
+
+            var option = document.createElement('option');
+            option.value = 'NES_8x16';
+            option.appendChild(document.createTextNode('NES (8x16) (.chr)'));
             outputFormatDropdown.appendChild(option);
 
             var option = document.createElement('option');
@@ -203,7 +223,7 @@ var editor = (function(self) {
             if(extension == 'chr') {
                 var reader = new FileReader();
                 reader.onload = function(event) {
-                    brewtool.loadTileset(event.target.result, inputCanvas,inputFormatDropdown.value, brewtool.getGreyscalePalette());
+                    brewtool.loadTileset(event.target.result, inputCanvas, inputFormatDropdown.value, brewtool.getGreyscalePalette());
                     paddingOption.checked = false;
                     inputCanvas.style.display = 'block';
 
